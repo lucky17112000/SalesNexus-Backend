@@ -2,6 +2,7 @@
 // npm install --save-dev prisma dotenv
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
+import { envVars } from "./src/config/env";
 
 export default defineConfig({
   schema: "prisma/schema",
@@ -10,6 +11,6 @@ export default defineConfig({
   },
   datasource: {
     // Use globalThis to avoid needing Node typings for `process` in this file
-    url: (globalThis as any).process?.env?.DATABASE_URL,
+    url: envVars.DATABASE_URL,
   },
 });
