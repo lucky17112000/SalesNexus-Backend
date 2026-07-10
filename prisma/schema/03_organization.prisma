@@ -1,0 +1,17 @@
+model Organization {
+    id        String   @id @default(uuid())
+    name      String
+    slug      String   @unique
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    //       users     User[]
+    companies  Company[]
+    contacts   Contact[]
+    deals      Deal[]
+    activities Activity[]
+    tasks      Task[]
+
+    @@index([slug], name: "organization_slug_index")
+    @@map("organizations")
+}

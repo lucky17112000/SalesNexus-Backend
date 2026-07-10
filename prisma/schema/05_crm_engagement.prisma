@@ -1,0 +1,46 @@
+model Activity {
+    id        String       @id @default(uuid())
+    content   String       @db.Text
+    type      ActivityType @default(NOTE)
+    dealId    String
+    deal      Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+    contactId String
+    contact   Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+    //       userId    String
+    //   user      User         @relation("CreatedActivities", fields: [userId], references: [id])
+
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+    onDelete       String?      @default("NO_ACTION") @db.VarChar(20)
+
+    @@index([organizationId])
+    @@index([dealId])
+    @@index([createdAt])
+    @@map("activities")
+}
+
+model Task {
+    id          String     @id @default(uuid())
+    title       String
+    description String?    @db.Text
+    dueDate     DateTime
+    status      TaskStatus @default(PENDING)
+    dealId      String
+    deal        Deal?      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+    //       assignedToId String
+    //   assignedTo   User         @relation("AssignedTasks", fields: [assignedToId], references: [id])
+    oraganizationId String
+    organization    Organization @relation(fields: [oraganizationId], references: [id], onDelete: Cascade)
+    createdAt       DateTime     @default(now())
+    updatedAt       DateTime     @updatedAt
+
+    @@index([oraganizationId])
+    //   @@index([assignedToId])
+    @@index([dueDate])
+    @@index([status])
+    @@map("tasks")
+}

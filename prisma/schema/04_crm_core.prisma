@@ -1,0 +1,67 @@
+model Company {
+    id             String       @id @default(uuid())
+    name           String
+    industry       String?
+    website        String?
+    phone          String?
+    address        String?
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    contacts       Contact[]
+    deals          Deal[]
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+    onDelete       String?      @default("NO_ACTION") @db.VarChar(20)
+
+    @@index([organizationId])
+    @@index([name])
+}
+
+model Contact {
+    id             String       @id @default(uuid())
+    firstName      String
+    lastName       String?
+    email          String       @unique
+    phone          String?
+    designation    String?
+    companyId      String
+    company        Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    deals          Deal[]
+    activities     Activity[]
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+    onDelete       String?      @default("NO_ACTION") @db.VarChar(20)
+
+    @@unique([email, organizationId])
+    @@index([organizationId])
+    @@index([companyId])
+}
+
+model Deal {
+    id                String       @id @default(uuid())
+    name              String
+    value             Float?
+    stage             DealStage?   @default(NEW)
+    expectedCloseDate DateTime?
+    contactId         String
+    contact           Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+    companyId         String
+    company           Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    oraganizationId   String
+    organization      Organization @relation(fields: [oraganizationId], references: [id], onDelete: Cascade)
+    activities        Activity[]
+    createdAt         DateTime     @default(now())
+    updatedAt         DateTime     @updatedAt
+    onDelete          String?      @default("NO_ACTION") @db.VarChar(20)
+    deletedAt         DateTime?
+    tasks             Task[]
+
+    //      assignedToId     String?
+    //   assignedTo       User?      @relation("AssignedDeals", fields: [assignedToId], references: [id])
+    @@index([oraganizationId])
+    @@index([stage])
+    // @@index([assignedToId])
+    @@map("deals")
+}

@@ -1,0 +1,29 @@
+enum Role {
+    ADMIN
+    MANAGER
+    MEMBER
+}
+
+//deal lifeCycle
+enum DealStage {
+    NEW
+    CONTACTED
+    PROPOSAL
+    CLOSED_WON
+    CLOSED_LOST
+}
+
+enum ActivityType {
+    CALLy
+
+    EMAIL
+    MEETING
+    NOTE
+}
+
+enum TaskStatus {
+    PENDING
+    IN_PROGRESS
+    COMPLETED
+    CANCELED
+}
