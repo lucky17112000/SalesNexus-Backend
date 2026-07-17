@@ -27,3 +27,10 @@ enum TaskStatus {
     COMPLETED
     CANCELED
 }
+
+enum UserStatus {
+    ACTIVE
+    INACTIVE
+    BANNED
+    DELETED
+}
