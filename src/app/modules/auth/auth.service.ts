@@ -4,9 +4,11 @@ import {
   User,
   UserStatus,
 } from "../../../../prisma/src/generated/prisma/client";
-import AppError from "../../errorHelper/Apperror";
+
 import { ILoginPayload, ISignupPayload } from "../../interfaces/user.interface";
 import { auth } from "../../lib/auth";
+import AppError from "../../errorHelper/AppError";
+import { tokenUtils } from "../../utils/token";
 
 const registerUser = async (payload: ISignupPayload) => {
   const { name, email, password } = payload;
@@ -57,7 +59,25 @@ const loginUser = async (payload: ILoginPayload) => {
       "User account is deleted. Please contact support.",
     );
   }
-  return data;
+
+  const accessToken = tokenUtils.getAccessToken({
+    userId: data.user.id,
+    name: data.user.name,
+    email: data.user.email,
+    role: data.user.role,
+    isDeleted: data.user.isDeleted,
+    emailVerified: data.user.emailVerified,
+  });
+
+  const refreshoken = tokenUtils.getRefreshToken({
+    userId: data.user.id,
+    name: data.user.name,
+    email: data.user.email,
+    role: data.user.role,
+    isDeleted: data.user.isDeleted,
+    emailVerified: data.user.emailVerified,
+  });
+  return { ...data, accessToken, refreshoken };
 };
 export const AuthService = {
   registerUser,
