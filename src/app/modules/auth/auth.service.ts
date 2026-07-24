@@ -1,8 +1,10 @@
+import status from "http-status";
 import {
   Role,
   User,
   UserStatus,
 } from "../../../../prisma/src/generated/prisma/client";
+import AppError from "../../errorHelper/Apperror";
 import { ILoginPayload, ISignupPayload } from "../../interfaces/user.interface";
 import { auth } from "../../lib/auth";
 
@@ -19,7 +21,7 @@ const registerUser = async (payload: ISignupPayload) => {
   });
   //after registration we will get a token and a user
   if (!data.user) {
-    throw new Error("User registration failed");
+    throw new AppError(status.BAD_REQUEST, "User registration failed");
   }
   return data;
 };
@@ -34,17 +36,26 @@ const loginUser = async (payload: ILoginPayload) => {
     },
   });
   if (!data.user) {
-    throw new Error("User login failed");
+    throw new AppError(status.UNAUTHORIZED, "Invalid email or password");
   }
 
   if (data.user.status === UserStatus.INACTIVE) {
-    throw new Error("User account is inactive. Please contact support.");
+    throw new AppError(
+      status.FORBIDDEN,
+      "User account is inactive. Please contact support.",
+    );
   }
   if (data.user.status === UserStatus.BANNED) {
-    throw new Error("User account is banned. Please contact support.");
+    throw new AppError(
+      status.FORBIDDEN,
+      "User account is banned. Please contact support.",
+    );
   }
   if (data.user.status === UserStatus.DELETED) {
-    throw new Error("User account is deleted. Please contact support.");
+    throw new AppError(
+      status.GONE,
+      "User account is deleted. Please contact support.",
+    );
   }
   return data;
 };

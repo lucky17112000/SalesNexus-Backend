@@ -1,8 +1,7 @@
 import express, { Application, NextFunction, Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { prisma } from "./app/lib/prisma";
-import { OrganizationRoutes } from "./app/modules/organization/organization.route";
+
 import { IndexRouter } from "./app/routes";
 import { globalErrorHandler } from "./app/middlware/globalErrorHandler";
 import { notFound } from "./app/middlware/notFound";
@@ -18,6 +17,7 @@ app.use(express.urlencoded({ extended: true })); // URL-এনকোডেড �
 app.use("/api/v1", IndexRouter); // Organization রাউটস যোগ করা
 
 app.get("/", async (req: Request, res: Response) => {
+  // throw new AppError(status.BAD_REQUEST, "This is a test error"); // Test the global error handler
   res.status(200).json({ message: "Hello, World!" });
 });
 
