@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { IndexRouter } from "./app/routes";
 import { globalErrorHandler } from "./app/middlware/globalErrorHandler";
 import { notFound } from "./app/middlware/notFound";
+import cookieParser from "cookie-parser";
 
 const app: Application = express();
 
@@ -12,6 +13,7 @@ dotenv.config();
 
 app.use(cors()); // ফ্রন্টএন্ড (Next.js) থেকে API কল করার অনুমতি দেয়
 app.use(express.json()); // JSON বডি পার্স করা
+app.use(cookieParser()); // কুকি পার্স করা
 app.use(express.urlencoded({ extended: true })); // URL-এনকোডেড ফর্ম ডেটা পার্স করা
 
 app.use("/api/v1", IndexRouter); // Organization রাউটস যোগ করা

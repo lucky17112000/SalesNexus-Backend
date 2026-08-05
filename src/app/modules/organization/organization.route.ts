@@ -3,11 +3,19 @@ import { OrganizationController } from "./organization.controller";
 import z from "zod";
 import { validateRequest } from "../../middlware/validateRequest";
 import { createOrganizationSchema } from "./organization.validation";
+import { cookieUtils } from "../../utils/cookie";
+import AppError from "../../errorHelper/AppError";
+import status from "http-status";
+import { jwtUtils } from "../../utils/jwt";
+import { envVars } from "../../../config/env";
+import { checkAuth } from "../../middlware/checkAuth";
 
 const router = Router();
 
 router.post(
   "/",
+  checkAuth("MEMBER"),
+
   validateRequest(createOrganizationSchema),
   OrganizationController.createOrganization,
 );
