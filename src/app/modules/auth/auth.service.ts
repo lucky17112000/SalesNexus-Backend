@@ -11,6 +11,9 @@ import AppError from "../../errorHelper/AppError";
 import { tokenUtils } from "../../utils/token";
 import { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
+import { jwtUtils } from "../../utils/jwt";
+import { envVars } from "../../../config/env";
+import { JwtPayload } from "jsonwebtoken";
 
 const registerUser = async (payload: ISignupPayload) => {
   const { name, email, password } = payload;
@@ -105,8 +108,66 @@ const getMe = async (user: IRequestUser) => {
   }
   return isUserExist;
 };
+
+const getNewToken = async (refreshToken: string, sessionToken: string) => {
+  const isSessionTokenExists = await prisma.session.findUnique({
+    where: {
+      token: sessionToken,
+    },
+    include: {
+      user: true,
+    },
+  });
+  if (!isSessionTokenExists) {
+    throw new AppError(status.UNAUTHORIZED, "Invalid session token");
+  }
+  const verifiedRefreshToken = jwtUtils.verifyToken(
+    refreshToken,
+    envVars.REFRESH_TOKEN_SECRET,
+  );
+  if (!verifiedRefreshToken.success) {
+    throw new AppError(status.UNAUTHORIZED, "Invalid refresh token");
+  }
+  // Generate a new access token
+  const data = verifiedRefreshToken.decoded as JwtPayload;
+
+  const newAccessToken = tokenUtils.getAccessToken({
+    userId: data.userId,
+    name: data.name,
+    email: data.email,
+    role: data.role,
+    isDeleted: data.isDeleted,
+    emailVerified: data.emailVerified,
+  });
+
+  const newRefreshToken = tokenUtils.getRefreshToken({
+    userId: data.userId,
+    name: data.name,
+    email: data.email,
+    role: data.role,
+    isDeleted: data.isDeleted,
+    emailVerified: data.emailVerified,
+  });
+  const updatedSession = await prisma.session.update({
+    where: {
+      token: sessionToken,
+    },
+    data: {
+      token: sessionToken,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), //! 1 days
+      updatedAt: new Date(),
+    },
+  });
+  return {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+    sessionToken: updatedSession.token,
+  };
+};
+
 export const AuthService = {
   registerUser,
   loginUser,
   getMe,
+  getNewToken,
 };

@@ -10,7 +10,7 @@ export const validateRequest = (zodSchema: z.ZodObject) => {
     }
     //sanitizing data
     req.body = parsedResult.data;
-    console.log("After zod validation", req.body);
+
     next();
   };
 };
