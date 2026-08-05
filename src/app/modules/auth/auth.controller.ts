@@ -37,7 +37,17 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     },
   });
 });
-
+const registerAdminAndOrganization = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await AuthService.registerAdminAndOrganization(req.body);
+    sendResponse(res, {
+      httpStatusCode: status.CREATED,
+      success: true,
+      message: "Admin and Organization registered successfully",
+      data: result,
+    });
+  },
+);
 const getMe = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
 
@@ -75,4 +85,5 @@ export const AuthController = {
   loginUser,
   getMe,
   getNewToken,
+  registerAdminAndOrganization,
 };

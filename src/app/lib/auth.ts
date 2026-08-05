@@ -14,11 +14,11 @@ export const auth = betterAuth({
   },
   user: {
     additionalFields: {
-      role: {
-        type: "string",
-        required: true,
-        defaultValue: Role.MEMBER,
-      },
+      // role: {
+      //   type: "string",
+      //   required: true,
+      //   defaultValue: Role.MEMBER,
+      // },
       status: {
         type: "string",
         required: true,

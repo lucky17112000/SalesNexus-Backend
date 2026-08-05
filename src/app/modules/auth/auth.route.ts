@@ -8,6 +8,11 @@ router.post("/register", AuthController.registerUser);
 router.post("/login", AuthController.loginUser);
 
 router.post("/refresh-token", AuthController.getNewToken);
+router.post(
+  "/register-admin",
+
+  AuthController.registerAdminAndOrganization,
+);
 router.get(
   "/me",
   checkAuth(Role.ADMIN, Role.MANAGER, Role.MEMBER),

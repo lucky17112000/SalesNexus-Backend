@@ -47,6 +47,11 @@ export { Prisma }
  */
 export type Organization = Prisma.OrganizationModel
 /**
+ * Model Member
+ * 
+ */
+export type Member = Prisma.MemberModel
+/**
  * Model Company
  * 
  */

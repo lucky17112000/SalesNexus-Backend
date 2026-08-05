@@ -14,6 +14,7 @@ import { prisma } from "../../lib/prisma";
 import { jwtUtils } from "../../utils/jwt";
 import { envVars } from "../../../config/env";
 import { JwtPayload } from "jsonwebtoken";
+import { IAdminSignupPayload } from "./auth.interface";
 
 const registerUser = async (payload: ISignupPayload) => {
   const { name, email, password } = payload;
@@ -33,6 +34,57 @@ const registerUser = async (payload: ISignupPayload) => {
   return data;
 };
 
+//register admin with organization and member schema
+const registerAdminAndOrganization = async (payload: IAdminSignupPayload) => {
+  const { name, email, password, organizationName } = payload;
+  const userData = await auth.api.signUpEmail({
+    body: {
+      name,
+      email,
+      password,
+    },
+  });
+
+  if (!userData.user) {
+    throw new AppError(status.BAD_REQUEST, "Admin registration failed");
+  }
+
+  const userId = userData.user.id;
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const organization = await tx.organization.create({
+        data: {
+          name: organizationName,
+          slug:
+            organizationName.toLowerCase().replace(/\s/g, "-") +
+            "-" +
+            Date.now(),
+        },
+      });
+
+      const member = await tx.member.create({
+        data: {
+          userId: userId,
+          organizationId: organization.id,
+          role: Role.ADMIN,
+        },
+      });
+      return { organization, member };
+    });
+    return {
+      user: userData.user,
+      organization: result.organization,
+      member: result.member,
+    };
+  } catch (error) {
+    console.error("Transaction failed. Deleting user...");
+    await prisma.user.delete({ where: { id: userId } }).catch(() => {});
+    throw new AppError(
+      status.INTERNAL_SERVER_ERROR,
+      "Failed to create organization. Registration rolled back.",
+    );
+  }
+};
 const loginUser = async (payload: ILoginPayload) => {
   const { email, password } = payload;
   const data = await auth.api.signInEmail({
@@ -65,11 +117,32 @@ const loginUser = async (payload: ILoginPayload) => {
     );
   }
 
+  const member = await prisma.member.findFirst({
+    where: {
+      userId: data.user.id,
+      // isDeleted: false,
+    },
+    select: {
+      role: true,
+      organizationId: true,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+  let role = "MEMBER"; // Default role
+  let organizationId: string | null = null;
+
+  if (member) {
+    role = member.role;
+    organizationId = member.organizationId;
+  }
+
   const accessToken = tokenUtils.getAccessToken({
     userId: data.user.id,
     name: data.user.name,
     email: data.user.email,
-    role: data.user.role,
+    role: role as Role,
     isDeleted: data.user.isDeleted,
     emailVerified: data.user.emailVerified,
   });
@@ -78,7 +151,7 @@ const loginUser = async (payload: ILoginPayload) => {
     userId: data.user.id,
     name: data.user.name,
     email: data.user.email,
-    role: data.user.role,
+    role: role as Role,
     isDeleted: data.user.isDeleted,
     emailVerified: data.user.emailVerified,
   });
@@ -170,4 +243,5 @@ export const AuthService = {
   loginUser,
   getMe,
   getNewToken,
+  registerAdminAndOrganization,
 };

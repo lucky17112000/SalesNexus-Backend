@@ -11,7 +11,24 @@ model Organization {
     deals      Deal[]
     activities Activity[]
     tasks      Task[]
+    members    Member[]
 
     @@index([slug], name: "organization_slug_index")
     @@map("organizations")
+}
+
+model Member {
+    id             String       @id @default(uuid())
+    userId         String
+    organizationId String
+    role           String
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+    user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, organizationId])
+    @@index([userId])
+    @@index([organizationId])
+    @@map("member")
 }
