@@ -71,6 +71,14 @@ export const checkAuth =
             "You are not authorized to access this resource.",
           );
         }
+
+        req.user = {
+          userId: user.id,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+          isDeleted: user.isDeleted,
+        };
       }
 
       const accessToken = cookieUtils.getCookie(req, "accessToken");

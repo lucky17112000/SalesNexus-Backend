@@ -4,7 +4,7 @@ import status from "http-status";
 import { TErrorResponse, TErrorSource } from "../interfaces/errorInterFace";
 import z from "zod";
 import { handleZodError } from "../errorHelper/handleZodeError";
-import AppError from "../errorHelper/Apperror";
+import AppError from "../errorHelper/AppError";
 
 export const globalErrorHandler = (
   err: any,
