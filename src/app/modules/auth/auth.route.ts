@@ -18,6 +18,7 @@ router.post(
   checkAuth(Role.ADMIN, Role.MANAGER, Role.MEMBER),
   AuthController.changePassword,
 );
+router.post("/verify-email", AuthController.verifyEmail);
 router.get(
   "/me",
   checkAuth(Role.ADMIN, Role.MANAGER, Role.MEMBER),
