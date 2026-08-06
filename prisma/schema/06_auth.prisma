@@ -4,16 +4,17 @@ model User {
     email         String
     emailVerified Boolean @default(false)
 
-    status             UserStatus @default(ACTIVE)
-    needPasswordChange Boolean    @default(false)
-    isDeleted          Boolean    @default(false)
+    status             UserStatus   @default(ACTIVE)
+    needPasswordChange Boolean      @default(false)
+    isDeleted          Boolean      @default(false)
     deletedAt          DateTime?
     image              String?
-    createdAt          DateTime   @default(now())
-    updatedAt          DateTime   @updatedAt
+    createdAt          DateTime     @default(now())
+    updatedAt          DateTime     @updatedAt
     sessions           Session[]
     accounts           Account[]
     members            Member[]
+    invitations        Invitation[]
 
     @@unique([email])
     @@map("user")

@@ -1,5 +1,6 @@
 import status from "http-status";
 import {
+  InvitationStatus,
   Role,
   User,
   UserStatus,
@@ -20,6 +21,8 @@ import {
   IchangePasswordPayload,
   IRequestUser,
 } from "./auth.interface";
+import { IRegisterWithInvitePayload } from "../invite/invite.interface";
+import { inviteService } from "../invite/invite.service";
 
 const registerUser = async (payload: ISignupPayload) => {
   const { name, email, password } = payload;
@@ -37,6 +40,65 @@ const registerUser = async (payload: ISignupPayload) => {
     throw new AppError(status.BAD_REQUEST, "User registration failed");
   }
   return data;
+};
+const registerWithInvite = async (payload: IRegisterWithInvitePayload) => {
+  const { name, email, password, inviteToken } = payload;
+  const invite = await inviteService.validateInviteToken(inviteToken);
+  if (!invite) {
+    throw new AppError(status.BAD_REQUEST, "Invalid or expired invite token");
+  }
+  if (invite.email !== email) {
+    throw new AppError(status.BAD_REQUEST, "Email does not match the invite");
+  }
+
+  const userData = await auth.api.signUpEmail({
+    body: { name, email, password },
+  });
+  if (!userData.user) {
+    throw new AppError(status.BAD_REQUEST, "User registration failed");
+  }
+
+  const userId = userData.user.id;
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const member = await tx.member.create({
+        data: {
+          userId: userId,
+          organizationId: invite.organizationId,
+          role: invite.role,
+        },
+      });
+
+      const updatedInvite = await tx.invitation.update({
+        where: { id: invite.id },
+        data: {
+          status: InvitationStatus.USED,
+        },
+      });
+      return { member, updatedInvite };
+    });
+    return {
+      user: userData.user,
+      token: userData.token,
+      organizationId: invite.organizationId,
+      role: invite.role,
+    };
+  } catch (error) {
+    console.error("Transaction failed. Deleting user...");
+    try {
+      await prisma.user.delete({ where: { id: userId } });
+    } catch (deleteError) {
+      console.error(
+        "Failed to delete user after transaction failure:",
+        deleteError,
+      );
+    }
+
+    throw new AppError(
+      status.INTERNAL_SERVER_ERROR,
+      "Registration failed. Please try again.",
+    );
+  }
 };
 
 //register admin with organization and member schema
@@ -99,6 +161,7 @@ const loginUser = async (payload: ILoginPayload) => {
       rememberMe: true,
     },
   });
+  console.log("Login data:", data); // Debugging line
   if (!data.user) {
     throw new AppError(status.UNAUTHORIZED, "Invalid email or password");
   }
@@ -366,4 +429,5 @@ export const AuthService = {
   changePassword,
   logoutUser,
   verifyEmail,
+  registerWithInvite,
 };

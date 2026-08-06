@@ -139,6 +139,17 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const registerWithInvite = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const result = await AuthService.registerWithInvite(payload);
+  sendResponse(res, {
+    httpStatusCode: status.CREATED,
+    success: true,
+    message: "User registered successfully with invite verify your  email",
+    data: result,
+  });
+});
+
 export const AuthController = {
   registerUser,
   loginUser,
@@ -148,4 +159,5 @@ export const AuthController = {
   changePassword,
   logoutUser,
   verifyEmail,
+  registerWithInvite,
 };

@@ -6,12 +6,13 @@ model Organization {
     updatedAt DateTime @updatedAt
 
     //       users     User[]
-    companies  Company[]
-    contacts   Contact[]
-    deals      Deal[]
-    activities Activity[]
-    tasks      Task[]
-    members    Member[]
+    companies   Company[]
+    contacts    Contact[]
+    deals       Deal[]
+    activities  Activity[]
+    tasks       Task[]
+    members     Member[]
+    invitations Invitation[]
 
     @@index([slug], name: "organization_slug_index")
     @@map("organizations")

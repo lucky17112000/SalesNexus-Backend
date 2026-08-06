@@ -34,3 +34,10 @@ enum UserStatus {
     BANNED
     DELETED
 }
+
+enum InvitationStatus {
+    PENDING
+    USED
+    EXPIRED
+    REJECTED
+}

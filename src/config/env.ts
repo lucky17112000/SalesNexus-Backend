@@ -22,6 +22,8 @@ interface EnvConfig {
     EMAIL_SENDER_SMTP_PORT: string;
     EMAIL_SENDER_SMTP_FROM: string;
   };
+  INVITE_EXPIRY_DAYS: string;
+  FRONTEND_URL: string;
 }
 const loadEnvVariables = (): EnvConfig => {
   const requiredEnvVars = [
@@ -41,6 +43,8 @@ const loadEnvVariables = (): EnvConfig => {
     "EMAIL_SENDER_SMTP_HOST",
     "EMAIL_SENDER_SMTP_PORT",
     "EMAIL_SENDER_SMTP_FROM",
+    "INVITE_EXPIRY_DAYS",
+    "FRONTEND_URL",
   ];
   requiredEnvVars.forEach((varName) => {
     if (!process.env[varName]) {
@@ -78,6 +82,8 @@ const loadEnvVariables = (): EnvConfig => {
       EMAIL_SENDER_SMTP_FROM:
         (process.env.EMAIL_SENDER_SMTP_FROM as string) || "",
     },
+    INVITE_EXPIRY_DAYS: (process.env.INVITE_EXPIRY_DAYS as string) || "",
+    FRONTEND_URL: (process.env.FRONTEND_URL as string) || "",
   };
 };
 

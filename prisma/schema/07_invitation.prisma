@@ -1,0 +1,20 @@
+model Invitation {
+    id             String           @id @default(uuid())
+    email          String
+    organizationId String
+    role           String
+    token          String           @unique
+    expiresAt      DateTime
+    status         InvitationStatus @default(PENDING)
+    inviterId      String
+    createdAt      DateTime         @default(now())
+    updatedAt      DateTime         @updatedAt
+    organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    inviter        User             @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+    @@index([email])
+    @@index([organizationId])
+    @@index([token])
+    @@index([status])
+    @@map("invitations")
+}

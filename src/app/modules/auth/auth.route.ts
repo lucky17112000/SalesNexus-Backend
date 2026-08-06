@@ -24,6 +24,7 @@ router.get(
   checkAuth(Role.ADMIN, Role.MANAGER, Role.MEMBER),
   AuthController.getMe,
 );
+router.post("/register-with-invite", AuthController.registerWithInvite);
 router.post(
   "/logout",
   checkAuth(Role.ADMIN, Role.MANAGER, Role.MEMBER),
