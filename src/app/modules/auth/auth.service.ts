@@ -9,12 +9,17 @@ import { ILoginPayload, ISignupPayload } from "../../interfaces/user.interface";
 import { auth } from "../../lib/auth";
 import AppError from "../../errorHelper/AppError";
 import { tokenUtils } from "../../utils/token";
-import { IRequestUser } from "../../interfaces";
+// import { IRequestUser } from "../../interfaces";
+
 import { prisma } from "../../lib/prisma";
 import { jwtUtils } from "../../utils/jwt";
 import { envVars } from "../../../config/env";
 import { JwtPayload } from "jsonwebtoken";
-import { IAdminSignupPayload } from "./auth.interface";
+import {
+  IAdminSignupPayload,
+  IchangePasswordPayload,
+  IRequestUser,
+} from "./auth.interface";
 
 const registerUser = async (payload: ISignupPayload) => {
   const { name, email, password } = payload;
@@ -158,28 +163,67 @@ const loginUser = async (payload: ILoginPayload) => {
   return { ...data, accessToken, refreshoken };
 };
 
+// src/app/modules/auth/auth.service.ts
+
 const getMe = async (user: IRequestUser) => {
-  const isUserExist = await prisma.user.findUnique({
-    where: {
-      id: user.userId,
-    },
+  // ১. ইউজারের বেসিক ডেটা বের করুন (role বাদে)
+  const userData = await prisma.user.findUnique({
+    where: { id: user.userId },
     select: {
-      // organization:true
+      id: true,
       name: true,
       email: true,
-      role: true,
+      emailVerified: true,
       status: true,
       isDeleted: true,
+      needPasswordChange: true,
       createdAt: true,
       updatedAt: true,
-      emailVerified: true,
+      image: true,
+      // ❌ role বাদ (কারণ এটি User-এ নেই)
     },
   });
 
-  if (!isUserExist) {
+  if (!userData) {
     throw new AppError(status.NOT_FOUND, "User not found");
   }
-  return isUserExist;
+
+  // ২. 🎯 Member টেবিল থেকে role ও organizationId বের করুন
+  //    (একজন ইউজার একাধিক অর্গের সদস্য হতে পারে, তাই সব এনে দিন)
+  const members = await prisma.member.findMany({
+    where: { userId: user.userId },
+    select: {
+      role: true,
+      organizationId: true,
+      organization: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
+  });
+
+  // ৩. ডিফল্ট রোল ও অর্গানাইজেশন সেট করুন (যদি কোনো Member না থাকে)
+  let defaultRole = "member";
+  let organizations = members.map((m) => ({
+    organizationId: m.organizationId,
+    role: m.role,
+    organization: m.organization,
+  }));
+
+  if (members.length > 0) {
+    // প্রথম Member-এর রোলকে ডিফল্ট ধরি
+    defaultRole = members[0]?.role ?? defaultRole;
+  }
+
+  // ৪. রেসপন্স তৈরি করুন
+  return {
+    ...userData,
+    role: defaultRole, // 👈 ডিফল্ট রোল
+    organizations, // 👈 ইউজারের সব অর্গানাইজেশন ও রোল
+  };
 };
 
 const getNewToken = async (refreshToken: string, sessionToken: string) => {
@@ -238,10 +282,75 @@ const getNewToken = async (refreshToken: string, sessionToken: string) => {
   };
 };
 
+const changePassword = async (
+  payload: IchangePasswordPayload,
+  sessionToken: string,
+) => {
+  const session = await auth.api.getSession({
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+    },
+  });
+
+  if (!session) {
+    throw new AppError(status.UNAUTHORIZED, "Invalid session token");
+  }
+  const { currentPassword, newPassword } = payload;
+  const result = await auth.api.changePassword({
+    body: {
+      currentPassword,
+      newPassword,
+      // revokeOtherSessions: true, // Revoke other sessions after password change
+    },
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+    },
+  });
+
+  const member = await prisma.member.findFirst({
+    where: {
+      userId: session.user.id,
+    },
+    select: {
+      role: true,
+    },
+  });
+
+  const accessToken = tokenUtils.getAccessToken({
+    userId: session.user.id,
+    name: session.user.name,
+    email: session.user.email,
+    role: member?.role,
+    isDeleted: session.user.isDeleted,
+    emailVerified: session.user.emailVerified,
+  });
+  const refreshToken = tokenUtils.getRefreshToken({
+    userId: session.user.id,
+    name: session.user.name,
+    email: session.user.email,
+    role: member?.role,
+    isDeleted: session.user.isDeleted,
+    emailVerified: session.user.emailVerified,
+  });
+
+  return { ...result, accessToken, refreshToken };
+};
+
+const logoutUser = async (sessionToken: string) => {
+  const result = await auth.api.signOut({
+    headers: new Headers({
+      Authorization: `Bearer ${sessionToken}`,
+    }),
+  });
+  return result;
+};
+
 export const AuthService = {
   registerUser,
   loginUser,
   getMe,
   getNewToken,
   registerAdminAndOrganization,
+  changePassword,
+  logoutUser,
 };

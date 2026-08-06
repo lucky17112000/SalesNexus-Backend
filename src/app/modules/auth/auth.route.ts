@@ -13,9 +13,19 @@ router.post(
 
   AuthController.registerAdminAndOrganization,
 );
+router.post(
+  "/change-password",
+  checkAuth(Role.ADMIN, Role.MANAGER, Role.MEMBER),
+  AuthController.changePassword,
+);
 router.get(
   "/me",
   checkAuth(Role.ADMIN, Role.MANAGER, Role.MEMBER),
   AuthController.getMe,
+);
+router.post(
+  "/logout",
+  checkAuth(Role.ADMIN, Role.MANAGER, Role.MEMBER),
+  AuthController.logoutUser,
 );
 export const AuthRoute = router;

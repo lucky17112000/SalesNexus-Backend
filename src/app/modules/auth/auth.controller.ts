@@ -5,6 +5,8 @@ import { sendResponse } from "../../../shared/sendResponse";
 import status from "http-status";
 import { setAccessRefreshIntoCookie } from "../../utils/setAccessRefreshIntoCookie";
 import { tokenUtils } from "../../utils/token";
+import AppError from "../../errorHelper/AppError";
+import { cookieUtils } from "../../utils/cookie";
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
@@ -48,17 +50,21 @@ const registerAdminAndOrganization = catchAsync(
     });
   },
 );
-const getMe = catchAsync(async (req: Request, res: Response) => {
+const getMe = async (req: Request, res: Response) => {
+  // checkAuth মিডলওয়্যার req.user সেট করে দিয়েছে
   const user = req.user;
+  if (!user) {
+    throw new AppError(status.UNAUTHORIZED, "Unauthorized");
+  }
 
   const result = await AuthService.getMe(user);
-  sendResponse(res, {
-    httpStatusCode: status.OK,
+
+  res.status(status.OK).json({
     success: true,
-    message: "User fetched successfully",
+    message: "User profile fetched successfully",
     data: result,
   });
-});
+};
 
 const getNewToken = catchAsync(async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
@@ -80,10 +86,54 @@ const getNewToken = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const changePassword = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const sessionToken = req.cookies["better-auth.session_token"];
+  const result = await AuthService.changePassword(payload, sessionToken);
+  const { accessToken, refreshToken, token } = result;
+  setAccessRefreshIntoCookie.setAccessTokenIntoCookie(res, accessToken);
+  setAccessRefreshIntoCookie.setRefreshTokenIntoCookie(res, refreshToken);
+  setAccessRefreshIntoCookie.setBetterAuthSessionCookie(res, token as string);
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "Password changed successfully",
+    data: result,
+  });
+});
+
+const logoutUser = catchAsync(async (req: Request, res: Response) => {
+  const sessionToken = req.cookies["better-auth.session_token"];
+  const result = await AuthService.logoutUser(sessionToken);
+  // Clear cookies
+  cookieUtils.clearCookie(res, "accessToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
+  cookieUtils.clearCookie(res, "refreshToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
+  cookieUtils.clearCookie(res, "better-auth.session_token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "User logged out successfully",
+  });
+});
+
 export const AuthController = {
   registerUser,
   loginUser,
   getMe,
   getNewToken,
   registerAdminAndOrganization,
+  changePassword,
+  logoutUser,
 };
